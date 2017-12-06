@@ -153,11 +153,16 @@ int main(int argc, char* argv[]) {
   }
 
   while(1) {
+  retry:
     if(unlikely(do_shutdown))
       break;
 
-    const int recv_rc = pfring_recv(pdi, &pkt_buffer, 0, &hdr, 1);
-    printf("Recv len %d\n", hdr.len);
+    const int recv_rc = pfring_recv(pdi, &pkt_buffer, 0, &hdr, 0);
+    if(recv_rc > 0)
+        printf("Recv len %d\n", hdr.len);
+    else
+        goto retry;
+
   redo:
     rc = pfring_send(pdo, (char*)pkt_buffer, hdr.len, 1);
   

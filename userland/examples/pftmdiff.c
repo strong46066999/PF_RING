@@ -387,7 +387,11 @@ int main(int argc, char* argv[]) {
     printf("\nPackets sended\n");
     packets_sent++;
 
-    const int recv_rc = pfring_recv(pdi, &pkt_buffer, 0, &hdr, 1);
+  retry:
+    if(unlikely(do_shutdown))
+      break;
+
+    const int recv_rc = pfring_recv(pdi, &pkt_buffer, 0, &hdr, 0);
     if(recv_rc > 0){
       packets_received++;
       
@@ -400,6 +404,8 @@ int main(int argc, char* argv[]) {
       printf("\nPackets received time diff: %s usec\n", pfring_format_numbers(ticks_to_us(curr_tick1 - last_sent_tick,hz), buf1, sizeof(buf1), 1));
 
       continue;
+    } else {
+        goto retry;
     }
 
     if(!(packets_sent < packets_to_send)) /* We have sent all needed packets */
