@@ -401,7 +401,7 @@ int main(int argc, char* argv[]) {
       sum_delay += curr_ticks_diff;
 
       const ticks curr_tick1 = getticks();
-      printf("\nPackets received time diff: %s usec\n", pfring_format_numbers(ticks_to_us(curr_tick1 - last_sent_tick,hz), buf1, sizeof(buf1), 1));
+      printf("\nPackets received time diff: %s usec len %d\n", pfring_format_numbers(ticks_to_us(curr_tick1 - last_sent_tick,hz), buf1, sizeof(buf1), 1), hdr.len);
 
       continue;
     } else {
