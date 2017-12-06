@@ -156,14 +156,14 @@ int main(int argc, char* argv[]) {
     if(unlikely(do_shutdown))
       break;
 
-    const int recv_rc = pfring_recv(pdi, &pkt_buffer, 0, &hdr, 0);
-
+    const int recv_rc = pfring_recv(pdi, &pkt_buffer, 0, &hdr, 1);
+    printf("Recv len %d\n", hdr.len);
   redo:
-    rc = pfring_send(pdo, (char*)pkt_buffer, recv_rc, 1);
+    rc = pfring_send(pdo, (char*)pkt_buffer, hdr.len, 1);
   
     if(rc == PF_RING_ERROR_INVALID_ARGUMENT) {
       printf("Attempting to send invalid packet [len: %u][MTU: %u]\n",
-	     recv_rc, pdo->mtu);
+	     hdr.len, pdo->mtu);
     } else if (rc < 0) {
       goto redo;
     }

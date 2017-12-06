@@ -384,10 +384,10 @@ int main(int argc, char* argv[]) {
     } else if (rc < 0) {
       goto redo;
     }
-
+    printf("\nPackets sended\n");
     packets_sent++;
 
-    const int recv_rc = pfring_recv(pdi, &pkt_buffer, 0, &hdr, 0);
+    const int recv_rc = pfring_recv(pdi, &pkt_buffer, 0, &hdr, 1);
     if(recv_rc > 0){
       packets_received++;
       
