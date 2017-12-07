@@ -1,5 +1,4 @@
-all: libpfring pcap build_examples build_examples_zc build_extcap 
-# build_tcpdump build_c++
+all: libpfring pcap build_examples build_examples_zc build_extcap build_tcpdump build_c++
 
 ###################
 
