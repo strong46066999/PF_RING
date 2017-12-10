@@ -71,6 +71,7 @@ u_int8_t wait_for_packet = 1, do_shutdown = 0, flush_packet=1;
 u_int32_t dst_ip = 0;
 u_int32_t nic_ip = 0;
 u_int8_t nic_mac[ETH_LEN];
+u_int8_t dst_mac[ETH_LEN];
 
 /* ******************************** */
 
@@ -133,13 +134,13 @@ void *packet_consumer_rx_thread(void *user) {
         
 #ifndef USE_BURST_API
         if(pfring_zc_recv_pkt(zq_rx, &buffers_rx[0], wait_for_packet) > 0) {
-            arp_imcp_process(buffers_rx[0]);
+            arp_icmp_process(buffers_rx[0]);
         }
 #else
         if((n = pfring_zc_recv_pkt_burst(zq_rx, buffers_rx, BURST_LEN, wait_for_packet)) > 0) {
             
             for (i = 0; i < n; i++) {
-                arp_imcp_process(buffers_rx);
+                arp_icmp_process(buffers_rx);
             }
         }
 #endif

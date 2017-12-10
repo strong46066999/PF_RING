@@ -296,11 +296,43 @@ unsigned short cal_chksum(unsigned short *addr,int len)
         return answer;
 }
 
+void build_arp_echo_xmit(u_int32_t dest_ip) {
+	u_int8_t tx_buff[MIN_BUFFER_LEN];
+	u_int8_t broadcast_mac[ETH_LEN] = {0xFF,0xFF,0xFF,0xFF,0xFF,0xFF};
+
+	/*
+		* Build ARP echo.
+		*/
+	 struct ethhdr *eth_echo_h = (struct ethhdr *) tx_buff;
+	 struct arphdr	*arp_echo_h = (struct arphdr *)(eth_echo_h + 1);
+	 unsigned char *arp_echo_ptr = (unsigned char *)(arp_echo_h + 1);
+	 
+	 /* Use source MAC address as destination MAC address. */
+	 memcpy(eth_echo_h->h_dest, broadcast_mac, ETH_LEN); 				 
+	 /* Set source MAC address with MAC address of TX port */
+	 memcpy(eth_echo_h->h_source, nic_mac, ETH_LEN);
+	 eth_echo_h->h_proto = htons(ETH_P_ARP);
+	 arp_echo_h->ar_hrd = htons(ARPHRD_ETHER);
+	 arp_echo_h->ar_pro = htons(ETH_P_IP);
+	 arp_echo_h->ar_hln = 6;
+	 arp_echo_h->ar_pln = 4;
+	 arp_echo_h->ar_op = htons(ARPOP_REQUEST);
+	 memcpy(arp_echo_ptr, nic_mac, ETH_LEN);
+	 arp_echo_ptr += ETH_LEN;
+	 memcpy(arp_echo_ptr, &nic_ip, 4);
+	 arp_echo_ptr += 4;
+	 memcpy(arp_echo_ptr, broadcast_mac, ETH_LEN);
+	 arp_echo_ptr += ETH_LEN;
+	 memcpy(arp_echo_ptr, &dest_ip, 4);
+
+	 packet_xmit(tx_buff, sizeof(struct ethhdr) + sizeof(struct arphdr) + 20);
+}
+
 /*
- * Receive a burst of packets, lookup for ICMP echo requests, and, if any,
+ * Receive a burst of packets, lookup for ICMP echo requests or ICMP response, and, if any,
  * send back ICMP echo replies.
  */
-void arp_imcp_process(pfring_zc_pkt_buff *buffer) {
+void arp_icmp_process(pfring_zc_pkt_buff *buffer) {
     struct ethhdr *eth_h;
     struct vlan_hdr *vlan_h;
     struct arphdr  *arp_h;
@@ -401,32 +433,24 @@ void arp_imcp_process(pfring_zc_pkt_buff *buffer) {
         printf("\n");
 #endif
         
-        if (arp_op != ARPOP_REQUEST) {
-            return;
-        }
-        
-        {
-            struct ethhdr *eth_reply_h;
-            struct arphdr  *arp_reply_h;
-            unsigned char *arp_reply_ptr;
-            
+        if (arp_op == ARPOP_REQUEST && tip == nic_ip) {
             /*
              * Build ARP reply.
              */
-            eth_reply_h = (struct ethhdr *) tx_buff;
+            struct ethhdr *eth_reply_h = (struct ethhdr *) tx_buff;
+            struct arphdr  *arp_reply_h = (struct arphdr *)(eth_reply_h + 1);
+            unsigned char *arp_reply_ptr = (unsigned char *)(arp_reply_h + 1);
+            
             /* Use source MAC address as destination MAC address. */
             memcpy(eth_reply_h->h_dest, eth_h->h_source, ETH_LEN);					
             /* Set source MAC address with MAC address of TX port */
             memcpy(eth_reply_h->h_source, nic_mac, ETH_LEN);
             eth_reply_h->h_proto = htons(ETH_P_ARP);
-            
-            arp_reply_h = (struct arphdr *)(eth_reply_h + 1);
             arp_reply_h->ar_hrd = htons(ARPHRD_ETHER);
             arp_reply_h->ar_pro = htons(ETH_P_IP);
             arp_reply_h->ar_hln = 6;
             arp_reply_h->ar_pln = 4;
             arp_reply_h->ar_op = htons(ARPOP_REPLY);
-            arp_reply_ptr = (unsigned char *)(arp_reply_h + 1);
             memcpy(arp_reply_ptr, nic_mac, ETH_LEN);
             arp_reply_ptr += ETH_LEN;
             memcpy(arp_reply_ptr, &nic_ip, 4);
@@ -436,6 +460,16 @@ void arp_imcp_process(pfring_zc_pkt_buff *buffer) {
             memcpy(arp_reply_ptr, &sip, 4);
 
             packet_xmit(tx_buff, sizeof(struct ethhdr) + sizeof(struct arphdr) + 20);
+
+            return;
+        } else if(arp_op == ARPOP_REPLY && tip == nic_ip) {
+            /*
+             * Get reply mac and ip entry.
+             */
+            memcpy(dst_mac, sha, ETH_LEN);
+#ifdef DEBUG
+            ether_addr_dump(" 			 dst_mac=", dst_mac);
+#endif            
             return;
         }
     }
