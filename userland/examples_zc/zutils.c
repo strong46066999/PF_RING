@@ -413,6 +413,66 @@ void trace(int trace_level, char *file, int line, char * format, ...) {
   va_end(va_ap);
 }
 
+
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <sys/ioctl.h>
+#include <netinet/in.h>
+#include <net/if.h>
+#include <arpa/inet.h>
+
+/* *************************************** */
+
+int get_mac(char *device, u_int8_t* buf, u_short bufLen)
+{
+    int fd, ret = -1;
+    struct ifreq ifr;
+    unsigned char *mac = NULL;
+
+    memset(&ifr, 0, sizeof(ifr));
+
+    fd = socket(AF_INET, SOCK_DGRAM, 0);
+
+    ifr.ifr_addr.sa_family = AF_INET;
+    strncpy(ifr.ifr_name , device , IFNAMSIZ-1);
+
+    if (0 == ioctl(fd, SIOCGIFHWADDR, &ifr)) {
+        mac = (unsigned char *)ifr.ifr_hwaddr.sa_data;
+
+				ret = 0;
+				memcpy(buf, mac, bufLen);
+    }
+
+    close(fd);
+    return ret;
+}
+
+/* *************************************** */
+
+u_int32_t get_ipaddrs(char *device)
+{
+ int fd;
+ struct ifreq ifr;
+ struct in_addr addr;
+
+ fd = socket(AF_INET, SOCK_DGRAM, 0);
+
+ /* I want to get an IPv4 IP address */
+ ifr.ifr_addr.sa_family = AF_INET;
+
+ /* I want IP address attached to "device" */
+ strncpy(ifr.ifr_name, device, IFNAMSIZ-1);
+
+ ioctl(fd, SIOCGIFADDR, &ifr);
+
+ close(fd);
+
+ addr = ((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr;
+ /* display result */
+ return *(u_int32_t*)&addr;
+}
+
+
 /* *************************************** */
 
 

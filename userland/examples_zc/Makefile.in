@@ -25,7 +25,7 @@ LIBS       = ${LIBPFRING} `../lib/pfring_config --libs` ../libpcap/libpcap.a `..
 # C compiler and flags
 #
 CC         = ${CROSS_COMPILE}gcc
-CFLAGS     = -O2 -Wall @CFLAGS@ ${INCLUDE} @HAVE_ZMQ@
+CFLAGS     = -g -O2 -Wall @CFLAGS@ ${INCLUDE} @HAVE_ZMQ@
 
 %.o: %.c zutils.c
 	${CC} ${CFLAGS} -c $< -o $@
@@ -36,7 +36,7 @@ CFLAGS     = -O2 -Wall @CFLAGS@ ${INCLUDE} @HAVE_ZMQ@
 PFPROGS   = 
 
 ifneq (@HAVE_PF_RING_ZC@,)
-	PFPROGS += zcount zbounce zbounce_ipc zpipeline zbalance zsend zcount_ipc zfanout_ipc zbalance_ipc zpipeline_ipc zfifo zreplicator zbalance_DC_ipc zsanitycheck
+	PFPROGS += zcount zping zbounce zbounce_ipc zpipeline zbalance zsend zcount_ipc zfanout_ipc zbalance_ipc zpipeline_ipc zfifo zreplicator zbalance_DC_ipc zsanitycheck
 endif
 
 TARGETS   =  ${PFPROGS}
@@ -45,6 +45,9 @@ all: ${TARGETS}
 
 zcount: zcount.o ${LIBPFRING} Makefile
 	${CC} ${CFLAGS} zcount.o ${LIBS} -o $@
+
+zping: zping.o ${LIBPFRING} Makefile
+	${CC} ${CFLAGS} zping.o ${LIBS} -o $@
 
 zpipeline: zpipeline.o ${LIBPFRING} Makefile
 	${CC} ${CFLAGS} zpipeline.o ${LIBS} -o $@
