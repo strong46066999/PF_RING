@@ -45,7 +45,7 @@ for IF in $INTERFACES ; do
 		printf "Configuring %s\n" "$IF"
 		ifconfig $IF up
 		sleep 1
-		bash ../scripts/set_irq_affinity $IF
+		bash ../scripts/set_irq_affinity 3 $IF
 
 		# Max number of RX slots
 		ethtool -G $IF rx 32768

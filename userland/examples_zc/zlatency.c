@@ -446,8 +446,8 @@ int main(int argc, char* argv[]) {
         const int recv_rc = pfring_zc_recv_pkt(zq_rx, &buffers_rx[0], 0);
         if(recv_rc > 0){
             packets_received++;
-            
-            const ticks curr_ticks_diff = calc_lat(pkt_buffer,hz);
+           u_char *buffer1 = pfring_zc_pkt_buff_data(buffers_rx[0],zq_rx);       
+            const ticks curr_ticks_diff = calc_lat(buffer1,hz);
             if(curr_ticks_diff > max_delay) max_delay = curr_ticks_diff;
             if(curr_ticks_diff < min_delay) min_delay = curr_ticks_diff;
             sum_delay += curr_ticks_diff;
