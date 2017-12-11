@@ -348,7 +348,7 @@ int main(int argc, char* argv[]) {
     usleep(1001);
     hz = (getticks() - tick_start - tick_delta) * 1000 /*kHz -> Hz*/;
 
-    printf("Estimated CPU freq: %lu Hz\n", (long unsigned int)hz);
+    printf("Estimated CPU freq: %.3f Hz\n", (double)hz/(1000*1000));
 
     int retry = 0;
     ticks icmp_sended_tick;
