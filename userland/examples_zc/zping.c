@@ -375,6 +375,7 @@ re_start:
                     break;
 
                 usleep(100);
+                arp_retry++;
             }
 
             if(arp_retry == 30)
@@ -397,6 +398,7 @@ re_start:
                 break;
 
             usleep(100);
+            icmp_retry++;
         }
 
         if(icmp_retry == 30)
