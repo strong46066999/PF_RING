@@ -252,150 +252,150 @@ void ipv4_addr_dump(const char *what, u_int32_t be_ipv4_addr) {
 static inline u_int16_t
 ipv4_hdr_cksum(struct iphdr *ip_h)
 {
-	u_int16_t *v16_h;
-	u_int32_t ip_cksum;
-
-	/*
-	 * Compute the sum of successive 16-bit words of the IPv4 header,
-	 * skipping the checksum field of the header.
-	 */
-	v16_h = (u_int16_t *) ip_h;
-	ip_cksum = v16_h[0] + v16_h[1] + v16_h[2] + v16_h[3] +
-		v16_h[4] + v16_h[6] + v16_h[7] + v16_h[8] + v16_h[9];
-
-	/* reduce 32 bit checksum to 16 bits and complement it */
-	ip_cksum = (ip_cksum & 0xffff) + (ip_cksum >> 16);
-	ip_cksum = (ip_cksum & 0xffff) + (ip_cksum >> 16);
-	ip_cksum = (~ip_cksum) & 0x0000FFFF;
-	return (ip_cksum == 0) ? 0xFFFF : (u_int16_t) ip_cksum;
+    u_int16_t *v16_h;
+    u_int32_t ip_cksum;
+    
+    /*
+         * Compute the sum of successive 16-bit words of the IPv4 header,
+         * skipping the checksum field of the header.
+         */
+    v16_h = (u_int16_t *) ip_h;
+    ip_cksum = v16_h[0] + v16_h[1] + v16_h[2] + v16_h[3] +
+            v16_h[4] + v16_h[6] + v16_h[7] + v16_h[8] + v16_h[9];
+    
+    /* reduce 32 bit checksum to 16 bits and complement it */
+    ip_cksum = (ip_cksum & 0xffff) + (ip_cksum >> 16);
+    ip_cksum = (ip_cksum & 0xffff) + (ip_cksum >> 16);
+    ip_cksum = (~ip_cksum) & 0x0000FFFF;
+    return (ip_cksum == 0) ? 0xFFFF : (u_int16_t) ip_cksum;
 }
 
 #define is_multicast_ipv4_addr(ipv4_addr) \
-	(((ntohl((ipv4_addr)) >> 24) & 0x000000FF) == 0xE0)
+    (((ntohl((ipv4_addr)) >> 24) & 0x000000FF) == 0xE0)
 
 /*校验和算法*/
 unsigned short cal_chksum(unsigned short *addr,int len)
 {       int nleft=len;
         int sum=0;
-        unsigned short *w=addr;
-        unsigned short answer=0;
-
-/*把ICMP报头二进制数据以2字节为单位累加起来*/
-        while(nleft>1)
-        {       sum+=*w++;
-                nleft-=2;
-        }
-        /*若ICMP报头为奇数个字节，会剩下最后一字节。把最后一个字节视为一个2字节数据的高字节，这个2字节数据的低字节为0，继续累加*/
-        if( nleft==1)
-        {       *(unsigned char *)(&answer)=*(unsigned char *)w;
-                sum+=answer;
-        }
-        sum=(sum>>16)+(sum&0xffff);
-        sum+=(sum>>16);
-        answer=~sum;
-        return answer;
+            unsigned short *w=addr;
+                unsigned short answer=0;
+                    
+                    /*把ICMP报头二进制数据以2字节为单位累加起来*/
+                    while(nleft>1)
+                    {       sum+=*w++;
+                        nleft-=2;
+                    }
+                        /*若ICMP报头为奇数个字节，会剩下最后一字节。把最后一个字节视为一个2字节数据的高字节，这个2字节数据的低字节为0，继续累加*/
+                        if( nleft==1)
+                        {       *(unsigned char *)(&answer)=*(unsigned char *)w;
+                            sum+=answer;
+                        }
+                        sum=(sum>>16)+(sum&0xffff);
+                            sum+=(sum>>16);
+                                answer=~sum;
+                                    return answer;
 }
 
 void build_arp_echo_xmit(u_int32_t dest_ip) {
-	u_int8_t tx_buff[MIN_BUFFER_LEN];
-	u_int8_t broadcast_mac[ETH_LEN] = {0xFF,0xFF,0xFF,0xFF,0xFF,0xFF};
-
-	/*
-		* Build ARP echo.
-		*/
-	 struct ethhdr *eth_echo_h = (struct ethhdr *) tx_buff;
-	 struct arphdr	*arp_echo_h = (struct arphdr *)(eth_echo_h + 1);
-	 unsigned char *arp_echo_ptr = (unsigned char *)(arp_echo_h + 1);
-	 
-	 /* Use source MAC address as destination MAC address. */
-	 memcpy(eth_echo_h->h_dest, broadcast_mac, ETH_LEN); 				 
-	 /* Set source MAC address with MAC address of TX port */
-	 memcpy(eth_echo_h->h_source, nic_mac, ETH_LEN);
-	 eth_echo_h->h_proto = htons(ETH_P_ARP);
-	 arp_echo_h->ar_hrd = htons(ARPHRD_ETHER);
-	 arp_echo_h->ar_pro = htons(ETH_P_IP);
-	 arp_echo_h->ar_hln = 6;
-	 arp_echo_h->ar_pln = 4;
-	 arp_echo_h->ar_op = htons(ARPOP_REQUEST);
-	 memcpy(arp_echo_ptr, nic_mac, ETH_LEN);
-	 arp_echo_ptr += ETH_LEN;
-	 memcpy(arp_echo_ptr, &nic_ip, 4);
-	 arp_echo_ptr += 4;
-	 memcpy(arp_echo_ptr, broadcast_mac, ETH_LEN);
-	 arp_echo_ptr += ETH_LEN;
-	 memcpy(arp_echo_ptr, &dest_ip, 4);
-
-	 packet_xmit(tx_buff, sizeof(struct ethhdr) + sizeof(struct arphdr) + 20);
+    u_int8_t tx_buff[MIN_BUFFER_LEN];
+    u_int8_t broadcast_mac[ETH_LEN] = {0xFF,0xFF,0xFF,0xFF,0xFF,0xFF};
+    
+    /*
+                * Build ARP echo.
+                */
+    struct ethhdr *eth_echo_h = (struct ethhdr *) tx_buff;
+    struct arphdr	*arp_echo_h = (struct arphdr *)(eth_echo_h + 1);
+    unsigned char *arp_echo_ptr = (unsigned char *)(arp_echo_h + 1);
+    
+    /* Use source MAC address as destination MAC address. */
+    memcpy(eth_echo_h->h_dest, broadcast_mac, ETH_LEN);
+    /* Set source MAC address with MAC address of TX port */
+    memcpy(eth_echo_h->h_source, nic_mac, ETH_LEN);
+    eth_echo_h->h_proto = htons(ETH_P_ARP);
+    arp_echo_h->ar_hrd = htons(ARPHRD_ETHER);
+    arp_echo_h->ar_pro = htons(ETH_P_IP);
+    arp_echo_h->ar_hln = 6;
+    arp_echo_h->ar_pln = 4;
+    arp_echo_h->ar_op = htons(ARPOP_REQUEST);
+    memcpy(arp_echo_ptr, nic_mac, ETH_LEN);
+    arp_echo_ptr += ETH_LEN;
+    memcpy(arp_echo_ptr, &nic_ip, 4);
+    arp_echo_ptr += 4;
+    memcpy(arp_echo_ptr, broadcast_mac, ETH_LEN);
+    arp_echo_ptr += ETH_LEN;
+    memcpy(arp_echo_ptr, &dest_ip, 4);
+    
+    packet_xmit(tx_buff, sizeof(struct ethhdr) + sizeof(struct arphdr) + 20);
 }
 
 void build_icmp_echo_xmit(u_int16_t dest_ip, u_int16_t id, u_int16_t seq)
 {
-	    /*
-	     * Prepare ICMP echo to be sent back.
-	     * - switch ethernet source and destinations addresses,
-	     * - use the request IP source address as the reply IP
-	     *		destination address,
-	     * - if the request IP destination address is a multicast
-	     *	 address:
-	     *		 - choose a reply IP source address different from the
-	     *			 request IP source address,
-	     *		 - re-compute the IP header checksum.
-	     *	 Otherwise:
-	     *		 - switch the request IP source and destination
-	     *			 addresses in the reply IP header,
-	     *		 - keep the IP header checksum unchanged.
-	     * - set IP_ICMP_ECHO in ICMP header.
-	     * ICMP checksum is computed by assuming it is valid in the
-	     * echo request and not verified.
-	     */
-			u_int8_t tx_buff[MIN_BUFFER_LEN];
-		  u_int16_t ip_totol_len = sizeof(struct iphdr) + sizeof(struct icmphdr) + 8 + 27;
-			struct ethhdr *eth_echo_h = (struct ethhdr *) tx_buff;;
-			struct iphdr *ip_echo_h = (struct iphdr *)(eth_echo_h + 1);	
-			struct icmphdr *icmp_echo_h = (struct icmphdr *)(ip_echo_h + 1);
-			struct timeval *tval = (struct timeval*)(icmp_echo_h + 1);
-			char *data = (char*) (tval+1);
-
-			/* Use source MAC address as destination MAC address. */
-			memcpy(eth_echo_h->h_dest, dst_mac, ETH_LEN);					
-			/* Set source MAC address with MAC address of TX port */
-			memcpy(eth_echo_h->h_source, nic_mac, ETH_LEN);
-			eth_echo_h->h_proto = htons(ETH_P_IP);
-
-			ip_echo_h->ihl = 5;
-			ip_echo_h->version = 4;
-			ip_echo_h->tos = 0;
-			ip_echo_h->tot_len = htons(ip_totol_len);
-			ip_echo_h->id = htons(2018);
-			ip_echo_h->ttl = 64;
-			ip_echo_h->frag_off = htons(0);
-			ip_echo_h->protocol = IPPROTO_ICMP;
-			ip_echo_h->daddr = dst_ip;
-			ip_echo_h->saddr = nic_ip;
-			ip_echo_h->check = 0;
-			ip_echo_h->check = ipv4_hdr_cksum(ip_echo_h);
-
-	    icmp_echo_h->type = ICMP_ECHO;
-	    icmp_echo_h->code = 0;
-	    icmp_echo_h->checksum = 0;
-	    icmp_echo_h->un.echo.id = htons(id);
-	    icmp_echo_h->un.echo.sequence = htons(seq);
-	    gettimeofday(tval, NULL);
-	    memcpy(data, "abcdefghijklmnopgrstuvwxyz", 26);
-	    data[26] = '\0';
-	    icmp_echo_h->checksum = cal_chksum((u_short*)icmp_echo_h, sizeof(struct icmphdr)+8+27);
-
+    /*
+             * Prepare ICMP echo to be sent back.
+             * - switch ethernet source and destinations addresses,
+             * - use the request IP source address as the reply IP
+             *		destination address,
+             * - if the request IP destination address is a multicast
+             *	 address:
+             *		 - choose a reply IP source address different from the
+             *			 request IP source address,
+             *		 - re-compute the IP header checksum.
+             *	 Otherwise:
+             *		 - switch the request IP source and destination
+             *			 addresses in the reply IP header,
+             *		 - keep the IP header checksum unchanged.
+             * - set IP_ICMP_ECHO in ICMP header.
+             * ICMP checksum is computed by assuming it is valid in the
+             * echo request and not verified.
+             */
+    u_int8_t tx_buff[MIN_BUFFER_LEN];
+    u_int16_t ip_totol_len = sizeof(struct iphdr) + sizeof(struct icmphdr) + 8 + 27;
+    struct ethhdr *eth_echo_h = (struct ethhdr *) tx_buff;;
+    struct iphdr *ip_echo_h = (struct iphdr *)(eth_echo_h + 1);
+    struct icmphdr *icmp_echo_h = (struct icmphdr *)(ip_echo_h + 1);
+    struct timeval *tval = (struct timeval*)(icmp_echo_h + 1);
+    char *data = (char*) (tval+1);
+    
+    /* Use source MAC address as destination MAC address. */
+    memcpy(eth_echo_h->h_dest, dst_mac, ETH_LEN);
+    /* Set source MAC address with MAC address of TX port */
+    memcpy(eth_echo_h->h_source, nic_mac, ETH_LEN);
+    eth_echo_h->h_proto = htons(ETH_P_IP);
+    
+    ip_echo_h->ihl = 5;
+    ip_echo_h->version = 4;
+    ip_echo_h->tos = 0;
+    ip_echo_h->tot_len = htons(ip_totol_len);
+    ip_echo_h->id = htons(2018);
+    ip_echo_h->ttl = 64;
+    ip_echo_h->frag_off = htons(0);
+    ip_echo_h->protocol = IPPROTO_ICMP;
+    ip_echo_h->daddr = dst_ip;
+    ip_echo_h->saddr = nic_ip;
+    ip_echo_h->check = 0;
+    ip_echo_h->check = ipv4_hdr_cksum(ip_echo_h);
+    
+    icmp_echo_h->type = ICMP_ECHO;
+    icmp_echo_h->code = 0;
+    icmp_echo_h->checksum = 0;
+    icmp_echo_h->un.echo.id = htons(id);
+    icmp_echo_h->un.echo.sequence = htons(seq);
+    gettimeofday(tval, NULL);
+    memcpy(data, "abcdefghijklmnopgrstuvwxyz", 26);
+    data[26] = '\0';
+    icmp_echo_h->checksum = cal_chksum((u_short*)icmp_echo_h, sizeof(struct icmphdr)+8+27);
+    
 #ifdef DEBUG
-			int i;
-			printf("Send icmp echo\n");
-			int len = sizeof(struct ethhdr) + ip_totol_len;
-			for(i = 0; i < len; i++)
-					printf("%02X ", tx_buff[i]);
-			printf("\n");
-
+    int i;
+    printf("Send icmp echo\n");
+    int len = sizeof(struct ethhdr) + ip_totol_len;
+    for(i = 0; i < len; i++)
+        printf("%02X ", tx_buff[i]);
+    printf("\n");
+    
 #endif
-			packet_xmit(tx_buff, sizeof(struct ethhdr) + ip_totol_len);
-	}
+    packet_xmit(tx_buff, sizeof(struct ethhdr) + ip_totol_len);
+}
 
 
 /*
@@ -512,7 +512,7 @@ void arp_icmp_process(pfring_zc_pkt_buff *buffer) {
             unsigned char *arp_reply_ptr = (unsigned char *)(arp_reply_h + 1);
             
             /* Use source MAC address as destination MAC address. */
-            memcpy(eth_reply_h->h_dest, eth_h->h_source, ETH_LEN);					
+            memcpy(eth_reply_h->h_dest, eth_h->h_source, ETH_LEN);
             /* Set source MAC address with MAC address of TX port */
             memcpy(eth_reply_h->h_source, nic_mac, ETH_LEN);
             eth_reply_h->h_proto = htons(ETH_P_ARP);
@@ -528,9 +528,9 @@ void arp_icmp_process(pfring_zc_pkt_buff *buffer) {
             memcpy(arp_reply_ptr, sha, ETH_LEN);
             arp_reply_ptr += ETH_LEN;
             memcpy(arp_reply_ptr, &sip, 4);
-
+            
             packet_xmit(tx_buff, sizeof(struct ethhdr) + sizeof(struct arphdr) + 20);
-
+            
             return;
         } else if(arp_op == ARPOP_REPLY && tip == nic_ip && sip == dst_ip) {
             /*
@@ -561,94 +561,94 @@ void arp_icmp_process(pfring_zc_pkt_buff *buffer) {
      * Check if packet is a ICMP echo request.
      */
     icmp_h = (struct icmphdr *) ((char *)ip_h +
-                                  sizeof(struct iphdr));
+                                 sizeof(struct iphdr));
     if (! ((ip_h->protocol == IPPROTO_ICMP) &&
            (icmp_h->code == 0))) {
         return;
     }
     
-		if(icmp_h->type == ICMP_ECHO)    
-		{
+    if(icmp_h->type == ICMP_ECHO)
+    {
 #ifdef DEBUG
-			printf("	ICMP: echo reqest id=%x seq==%x\n",
-				icmp_h->un.echo.id, icmp_h->un.echo.sequence);
+        printf("	ICMP: echo reqest id=%x seq==%x\n",
+               icmp_h->un.echo.id, icmp_h->un.echo.sequence);
 #endif
-
-
-		    /*
-		     * Prepare ICMP echo reply to be sent back.
-		     * - switch ethernet source and destinations addresses,
-		     * - use the request IP source address as the reply IP
-		     *		destination address,
-		     * - if the request IP destination address is a multicast
-		     *	 address:
-		     *		 - choose a reply IP source address different from the
-		     *			 request IP source address,
-		     *		 - re-compute the IP header checksum.
-		     *	 Otherwise:
-		     *		 - switch the request IP source and destination
-		     *			 addresses in the reply IP header,
-		     *		 - keep the IP header checksum unchanged.
-		     * - set IP_ICMP_ECHO_REPLY in ICMP header.
-		     * ICMP checksum is computed by assuming it is valid in the
-		     * echo request and not verified.
-		     */
-			  u_int16_t ip_totol_len = ntohs(ip_h->tot_len);
-				struct ethhdr *eth_reply_h = (struct ethhdr *) tx_buff;;
-				struct iphdr *ip_reply_h = (struct iphdr *)(eth_reply_h + 1);	
-				struct icmphdr *icmp_reply_h = (struct icmphdr *)(ip_reply_h + 1);
-				u_int32_t ip_addr;
-	     
-				/* Use source MAC address as destination MAC address. */
-				memcpy(eth_reply_h->h_dest, eth_h->h_source, ETH_LEN);					
-				/* Set source MAC address with MAC address of TX port */
-				memcpy(eth_reply_h->h_source, nic_mac, ETH_LEN);
-				eth_reply_h->h_proto = htons(ETH_P_IP);
-
-				memcpy((void*)ip_reply_h, (void*)ip_h, ip_totol_len);
-		    ip_addr = ip_h->saddr;
-
-		    if (is_multicast_ipv4_addr(ip_h->daddr)) {
-		        u_int32_t ip_src;
-		        
-		        ip_src = ntohl(ip_addr);
-		        if ((ip_src & 0x00000003) == 1)
-		            ip_src = (ip_src & 0xFFFFFFFC) | 0x00000002;
-		        else
-		            ip_src = (ip_src & 0xFFFFFFFC) | 0x00000001;
-		        ip_reply_h->saddr = htonl(ip_src);
-		        ip_reply_h->daddr = ip_addr;
-		    } else {
-		        ip_reply_h->saddr = ip_h->daddr;
-		        ip_reply_h->daddr = ip_addr;
-		    }
-				ip_reply_h->check = ipv4_hdr_cksum(ip_reply_h);
-				
-		    icmp_reply_h->type = ICMP_ECHOREPLY;
-		    icmp_reply_h->checksum = 0;
-				memcpy((void*)icmp_reply_h+sizeof(struct icmphdr), (void*)icmp_h+sizeof(struct icmphdr), 8);
-		    icmp_reply_h->checksum = cal_chksum((u_short*)icmp_reply_h, ip_totol_len - ip_h->ihl*4);
-
+        
+        
+        /*
+                     * Prepare ICMP echo reply to be sent back.
+                     * - switch ethernet source and destinations addresses,
+                     * - use the request IP source address as the reply IP
+                     *		destination address,
+                     * - if the request IP destination address is a multicast
+                     *	 address:
+                     *		 - choose a reply IP source address different from the
+                     *			 request IP source address,
+                     *		 - re-compute the IP header checksum.
+                     *	 Otherwise:
+                     *		 - switch the request IP source and destination
+                     *			 addresses in the reply IP header,
+                     *		 - keep the IP header checksum unchanged.
+                     * - set IP_ICMP_ECHO_REPLY in ICMP header.
+                     * ICMP checksum is computed by assuming it is valid in the
+                     * echo request and not verified.
+                     */
+        u_int16_t ip_totol_len = ntohs(ip_h->tot_len);
+        struct ethhdr *eth_reply_h = (struct ethhdr *) tx_buff;;
+        struct iphdr *ip_reply_h = (struct iphdr *)(eth_reply_h + 1);
+        struct icmphdr *icmp_reply_h = (struct icmphdr *)(ip_reply_h + 1);
+        u_int32_t ip_addr;
+        
+        /* Use source MAC address as destination MAC address. */
+        memcpy(eth_reply_h->h_dest, eth_h->h_source, ETH_LEN);
+        /* Set source MAC address with MAC address of TX port */
+        memcpy(eth_reply_h->h_source, nic_mac, ETH_LEN);
+        eth_reply_h->h_proto = htons(ETH_P_IP);
+        
+        memcpy((void*)ip_reply_h, (void*)ip_h, ip_totol_len);
+        ip_addr = ip_h->saddr;
+        
+        if (is_multicast_ipv4_addr(ip_h->daddr)) {
+            u_int32_t ip_src;
+            
+            ip_src = ntohl(ip_addr);
+            if ((ip_src & 0x00000003) == 1)
+                ip_src = (ip_src & 0xFFFFFFFC) | 0x00000002;
+            else
+                ip_src = (ip_src & 0xFFFFFFFC) | 0x00000001;
+            ip_reply_h->saddr = htonl(ip_src);
+            ip_reply_h->daddr = ip_addr;
+        } else {
+            ip_reply_h->saddr = ip_h->daddr;
+            ip_reply_h->daddr = ip_addr;
+        }
+        ip_reply_h->check = ipv4_hdr_cksum(ip_reply_h);
+        
+        icmp_reply_h->type = ICMP_ECHOREPLY;
+        icmp_reply_h->checksum = 0;
+        memcpy((void*)icmp_reply_h+sizeof(struct icmphdr), (void*)icmp_h+sizeof(struct icmphdr), 8);
+        icmp_reply_h->checksum = cal_chksum((u_short*)icmp_reply_h, ip_totol_len - ip_h->ihl*4);
+        
 #ifdef DEBUG
-				printf("Send icmp reply\n");
-				int len = sizeof(struct ethhdr) + ip_totol_len;
-				for(i = 0; i < len; i++)
-						printf("%02X ", tx_buff[i]);
-				printf("\n");
-
+        printf("Send icmp reply\n");
+        int len = sizeof(struct ethhdr) + ip_totol_len;
+        for(i = 0; i < len; i++)
+            printf("%02X ", tx_buff[i]);
+        printf("\n");
+        
 #endif
-				packet_xmit(tx_buff, sizeof(struct ethhdr) + ip_totol_len);
-		} else if(icmp_h->type == ICMP_ECHOREPLY) {
+        packet_xmit(tx_buff, sizeof(struct ethhdr) + ip_totol_len);
+    } else if(icmp_h->type == ICMP_ECHOREPLY) {
 #ifdef DEBUG
-								printf("	ICMP: echo response id=%x seq==%x\n",
-											 ntohs(icmp_h->un.echo.id), ntohs(icmp_h->un.echo.sequence));
+        printf("	ICMP: echo response id=%x seq==%x\n",
+               ntohs(icmp_h->un.echo.id), ntohs(icmp_h->un.echo.sequence));
 #endif
-
-				if(ntohs(icmp_h->un.echo.id) == ICMP_ID && ntohs(icmp_h->un.echo.sequence) == curr_seq) {
-						icmp_reached = 1;
-						icmp_reached_tick = getticks();
-				}
-		}
+        
+        if(ntohs(icmp_h->un.echo.id) == ICMP_ID && ntohs(icmp_h->un.echo.sequence) == curr_seq) {
+            icmp_reached = 1;
+            icmp_reached_tick = getticks();
+        }
+    }
 }
 
 

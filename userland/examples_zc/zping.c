@@ -83,13 +83,13 @@ ticks icmp_reached_tick;
 u_int16_t curr_seq = 0;
 
 static __inline__ ticks getticks(void) {
-  u_int32_t a, d;
-  asm volatile("rdtsc" : "=a" (a), "=d" (d));
-  return (((ticks)a) | (((ticks)d) << 32));
+    u_int32_t a, d;
+    asm volatile("rdtsc" : "=a" (a), "=d" (d));
+    return (((ticks)a) | (((ticks)d) << 32));
 }
 
 static double ticks_to_us(ticks dtick,const ticks hz){
-  return ((double) 1000000 /* us */) / ( hz / dtick );
+    return ((double) 1000000 /* us */) / ( hz / dtick );
 }
 
 /* ******************************** */
@@ -131,7 +131,7 @@ void packet_xmit(u_int8_t *buff, u_int16_t len)
 {
     int sent_bytes;
     
-    u_char *buffer = pfring_zc_pkt_buff_data(buffers_tx[0], zq_tx);	
+    u_char *buffer = pfring_zc_pkt_buff_data(buffers_tx[0], zq_tx);
     buffers_tx[0]->len = len;
     memcpy(buffer, buff, len);
     
@@ -262,10 +262,10 @@ int main(int argc, char* argv[]) {
     char *device = NULL, c, real_device[IFNAMSIZ]={'\0'}, *pname, buf1[64];
     int rx_cluster_id = DEFAULT_CLUSTER_ID;
     int tx_cluster_id = DEFAULT_CLUSTER_ID-2;
-		int max_ping_times = 3;
+    int max_ping_times = 3;
     pthread_t rx_thread;
-		ticks tick_start = 0, tick_delta = 0;
-		ticks hz = 0;
+    ticks tick_start = 0, tick_delta = 0;
+    ticks hz = 0;
 
     while((c = getopt(argc,argv,"hac:d:i:R:T:n:")) != '?') {
         if((c == 255) || (c == -1)) break;
@@ -296,9 +296,9 @@ int main(int argc, char* argv[]) {
         case 'T':
             bind_core_tx = atoi(optarg);
             break;
-				case 'n':
-						max_ping_times = atoi(optarg);
-						break;
+        case 'n':
+            max_ping_times = atoi(optarg);
+            break;
 
         }
     }
@@ -335,83 +335,83 @@ int main(int argc, char* argv[]) {
     
     pthread_create(&rx_thread, NULL, packet_consumer_rx_thread, (void*) NULL);
 
-		if(dst_ip == 0)
-    	goto pthread_join;
+    if(dst_ip == 0)
+        goto pthread_join;
 
-		/* cumputing usleep delay */
-		tick_start = getticks();
-		usleep(1);
-		tick_delta = getticks() - tick_start;
-			
-		/* cumputing CPU freq */
-		tick_start = getticks();
-		usleep(1001);
-		hz = (getticks() - tick_start - tick_delta) * 1000 /*kHz -> Hz*/;
-	
-		printf("Estimated CPU freq: %lu Hz\n", (long unsigned int)hz);	
+    /* cumputing usleep delay */
+    tick_start = getticks();
+    usleep(1);
+    tick_delta = getticks() - tick_start;
 
-		int retry = 0;
-		ticks icmp_sended_tick;
+    /* cumputing CPU freq */
+    tick_start = getticks();
+    usleep(1001);
+    hz = (getticks() - tick_start - tick_delta) * 1000 /*kHz -> Hz*/;
 
-		while(1) {
-				if(do_shutdown)
-					break;
+    printf("Estimated CPU freq: %lu Hz\n", (long unsigned int)hz);
+
+    int retry = 0;
+    ticks icmp_sended_tick;
+
+    while(1) {
+        if(do_shutdown)
+            break;
 
 re_start:
-				if(retry >= max_ping_times) {
-					do_shutdown =1;
-					break;
-				}
+        if(retry >= max_ping_times) {
+            do_shutdown =1;
+            break;
+        }
 
-				if(!memcmp(dst_mac, null_mac, ETH_LEN)) {
-					build_arp_echo_xmit(dst_ip);
-					
-					int arp_retry = 0;
-					while(arp_retry < 30) {
-						if(do_shutdown)
-							break;
+        if(!memcmp(dst_mac, null_mac, ETH_LEN)) {
+            build_arp_echo_xmit(dst_ip);
 
-						if(memcmp(dst_mac, null_mac, ETH_LEN))
-							break;
-						
-						usleep(100);
-					}
+            int arp_retry = 0;
+            while(arp_retry < 30) {
+                if(do_shutdown)
+                    break;
 
-					if(arp_retry == 30)
-					{
-							printf("ping timeout no arp get\n");
-							retry++;
-							goto	re_start;
-					}
-				}
+                if(memcmp(dst_mac, null_mac, ETH_LEN))
+                    break;
 
-				build_icmp_echo_xmit(dst_ip, ICMP_ID, curr_seq);
-				icmp_sended_tick = getticks();
-				icmp_reached = 0;
-				int icmp_retry = 0;
-				while(icmp_retry < 30) {
-					if(do_shutdown)
-						break;
-				
-					if(icmp_reached)
-						break;
-					
-					usleep(100);
-				}
-				
-				if(icmp_retry == 30)
-				{
-					printf("ping timeout no icmp reply\n");
-				}
-				else
-				{
-					const ticks curr_tick1 = getticks();
-					printf("\nPackets received time diff: %s usec\n", pfring_format_numbers(ticks_to_us(curr_tick1 - icmp_reached_tick,hz), buf1, sizeof(buf1), 1));
-				}
+                usleep(100);
+            }
 
-				curr_seq++;
-				retry++;
-		}
+            if(arp_retry == 30)
+            {
+                printf("ping timeout no arp get\n");
+                retry++;
+                goto	re_start;
+            }
+        }
+
+        build_icmp_echo_xmit(dst_ip, ICMP_ID, curr_seq);
+        icmp_sended_tick = getticks();
+        icmp_reached = 0;
+        int icmp_retry = 0;
+        while(icmp_retry < 30) {
+            if(do_shutdown)
+                break;
+
+            if(icmp_reached)
+                break;
+
+            usleep(100);
+        }
+
+        if(icmp_retry == 30)
+        {
+            printf("ping timeout no icmp reply\n");
+        }
+        else
+        {
+            const ticks curr_tick1 = getticks();
+            printf("\nPackets received time diff: %s usec\n", pfring_format_numbers(ticks_to_us(curr_tick1 - icmp_reached_tick,hz), buf1, sizeof(buf1), 1));
+        }
+
+        curr_seq++;
+        retry++;
+    }
 
 pthread_join:
 
