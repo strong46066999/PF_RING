@@ -267,7 +267,7 @@ int main(int argc, char* argv[]) {
     ticks tick_start = 0, tick_delta = 0;
     ticks hz = 0;
 
-    while((c = getopt(argc,argv,"hac:d:i:R:T:n:")) != '?') {
+    while((c = getopt(argc,argv,"hac:l:d:i:R:T:n:")) != '?') {
         if((c == 255) || (c == -1)) break;
         
         switch(c) {
