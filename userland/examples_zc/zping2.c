@@ -107,18 +107,16 @@ void sigproc(int sig) {
 /* *************************************** */
 
 void printHelp(void) {
-    printf("zping - (C) 2014 ntop.org\n");
+    printf("zping2 - (C) 2014 ntop.org\n");
     printf("Using PFRING_ZC v.%s\n", pfring_zc_version());
     printf("A simple pinger and pingd application.\n\n");
-    printf("Usage:   zping -i <device> -c <cluster id> [-d <ip address>] \n"
-           "                [-h] [-R <Rx core id>] [-T <Tx core id>] [-v] [-a]\n\n");
+    printf("Usage:   zping2 -i <device> -c <cluster id> [-d <ip address>] \n"
+           "                [-h] [-g <core id>] [-a]\n\n");
     printf("-h              Print this help\n");
     printf("-i <device>     Device name\n");
     printf("-d <ip address> Dest ip address\n");
-    printf("-c <rx cluster id> Rx cluster id\n");
-    printf("-l <tx cluster id> Tx cluster id\n");
-    printf("-R <core id>    Bind this app rx to a core\n");
-    printf("-T <core id>    Bind this app tx to a core\n");
+    printf("-c <cluster id> Cluster id\n");
+    printf("-g <core id>    Bind this app to a core\n");
     printf("-n <ping times> Max ping times\n");
     printf("-a              Active packet wait\n");
 }
@@ -169,9 +167,10 @@ int zc_rx_init(char *device) {
     
     buffers_rx = pfring_zc_get_packet_handle(zc);
     
-    if (buffers_rx == NULL)
+    if (buffers_rx == NULL) {
         fprintf(stderr, "pfring_zc_get_packet_handle error\n");
         return -1;
+    }
     
     return 0;
 }
@@ -188,9 +187,10 @@ int zc_tx_init(char *device) {
      
     buffers_tx = pfring_zc_get_packet_handle(zc);
     
-    if (buffers_tx == NULL)
+    if (buffers_tx == NULL) {
         fprintf(stderr, "pfring_zc_get_packet_handle error\n");
         return -1;
+    }
     
     return 0;
 }
@@ -205,7 +205,7 @@ int main(int argc, char* argv[]) {
     ticks tick_start = 0, tick_delta = 0;
     ticks hz = 0;
 
-    while((c = getopt(argc,argv,"hac:d:i:R:n:")) != '?') {
+    while((c = getopt(argc,argv,"hac:d:i:g:n:")) != '?') {
         if((c == 255) || (c == -1)) break;
         
         switch(c) {
@@ -225,7 +225,7 @@ int main(int argc, char* argv[]) {
         case 'i':
             device = strdup(optarg);
             break;
-        case 'R':
+        case 'g':
             bind_core_rx = atoi(optarg);
             break;
         case 'n':
