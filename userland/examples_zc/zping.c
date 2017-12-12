@@ -407,8 +407,7 @@ re_start:
         }
         else
         {
-            const ticks curr_tick1 = getticks();
-            printf("\nPackets received time diff: %s usec\n", pfring_format_numbers(ticks_to_us(curr_tick1 - icmp_reached_tick,hz), buf1, sizeof(buf1), 1));
+          printf("\nPackets received time diff: %s usec\n", pfring_format_numbers(ticks_to_us(icmp_reached_tick - icmp_sended_tick,hz), buf1, sizeof(buf1), 1));
         }
 
         curr_seq++;
