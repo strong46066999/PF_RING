@@ -81,6 +81,7 @@ u_int8_t null_mac[ETH_LEN] = {0x00,0x00, 0x00, 0x00,0x00,0x00};
 u_int32_t icmp_reached =0;
 ticks icmp_reached_tick;
 u_int16_t curr_seq = 0;
+ticks hz = 0;
 
 static __inline__ ticks getticks(void) {
     u_int32_t a, d;
@@ -265,7 +266,6 @@ int main(int argc, char* argv[]) {
     int max_ping_times = 3;
     pthread_t rx_thread;
     ticks tick_start = 0, tick_delta = 0;
-    ticks hz = 0;
 
     while((c = getopt(argc,argv,"hac:l:d:i:R:T:n:")) != '?') {
         if((c == 255) || (c == -1)) break;
@@ -332,11 +332,6 @@ int main(int argc, char* argv[]) {
     signal(SIGINT,  sigproc);
     signal(SIGTERM, sigproc);
     signal(SIGINT,  sigproc);
-    
-    pthread_create(&rx_thread, NULL, packet_consumer_rx_thread, (void*) NULL);
-
-    if(dst_ip == 0)
-        goto pthread_join;
 
     /* cumputing usleep delay */
     tick_start = getticks();
@@ -349,6 +344,11 @@ int main(int argc, char* argv[]) {
     hz = (getticks() - tick_start - tick_delta) * 1000 /*kHz -> Hz*/;
 
     printf("Estimated CPU freq: %.3f MHz\n", (double)hz/(1024*1024));
+    
+    pthread_create(&rx_thread, NULL, packet_consumer_rx_thread, (void*) NULL);
+
+    if(dst_ip == 0)
+        goto pthread_join;
 
     int retry = 0;
     ticks icmp_sended_tick;
