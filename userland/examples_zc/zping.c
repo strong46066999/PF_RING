@@ -333,8 +333,8 @@ re_start:
             }
         }
 
-        build_icmp_echo_xmit(dst_ip, ICMP_ID, curr_seq);
         icmp_sended_tick = getticks();
+        build_icmp_echo_xmit(dst_ip, ICMP_ID, curr_seq);
         icmp_reached = 0;
         int icmp_retry = 0;
         while(icmp_retry < 30) {
