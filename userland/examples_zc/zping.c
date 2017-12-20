@@ -201,9 +201,10 @@ int zc_tx_init(char *device) {
 int main(int argc, char* argv[]) {
     char *device = NULL, c, real_device[IFNAMSIZ]={'\0'}, *pname, buf1[64];
     int cluster_id = DEFAULT_CLUSTER_ID;
-    int max_ping_times = 3;
+    int max_ping_times = 3, packets_received = 0;
     pthread_t rx_thread;
     ticks tick_start = 0, tick_delta = 0;
+    ticks max_delay = 0,min_delay=(ticks)-1,sum_delay=0;
 
     while((c = getopt(argc,argv,"hac:d:i:g:n:")) != '?') {
         if((c == 255) || (c == -1)) break;
@@ -298,7 +299,8 @@ int main(int argc, char* argv[]) {
         goto pthread_join;
 
     int retry = 0;
-    ticks icmp_sended_tick;
+    ticks icmp_round_trip_sended_tick;
+    ticks icmp_one_way_sended_tick;
 
     while(1) {
         if(do_shutdown)
@@ -333,8 +335,10 @@ re_start:
             }
         }
 
-        icmp_sended_tick = getticks();
+        icmp_one_way_sended_tick = getticks();
         build_icmp_echo_xmit(dst_ip, ICMP_ID, curr_seq);
+        icmp_round_trip_sended_tick = getticks();
+        
         icmp_reached = 0;
         int icmp_retry = 0;
         while(icmp_retry < 30) {
@@ -354,12 +358,28 @@ re_start:
         }
         else
         {
-            printf("\nPackets received time diff: %s usec\n", pfring_format_numbers(ticks_to_us(icmp_reached_tick - icmp_sended_tick,hz), buf1, sizeof(buf1), 1));
+            packets_received++;
+            
+            const ticks curr_ticks_diff = (icmp_reached_tick - icmp_one_way_sended_tick)/2;
+            if(curr_ticks_diff > max_delay) max_delay = curr_ticks_diff;
+            if(curr_ticks_diff < min_delay) min_delay = curr_ticks_diff;
+            sum_delay += curr_ticks_diff;
+            printf("\nPackets received time diff: %s usec\n", pfring_format_numbers(ticks_to_us(icmp_reached_tick - icmp_round_trip_sended_tick,hz), buf1, sizeof(buf1), 1));
         }
 
         curr_seq++;
         retry++;
     }
+
+if(packets_received > 0) {
+  const double avg_delay = ((double)sum_delay)/packets_received;
+  printf("\nPackets received: %d\n", packets_received);
+  printf("Max delay: %s usec\n", pfring_format_numbers(ticks_to_us(max_delay,hz), buf1, sizeof(buf1), 1));
+  printf("Min delay: %s usec\n", pfring_format_numbers(ticks_to_us(min_delay,hz), buf1, sizeof(buf1), 1));
+  printf("Avg delay: %s usec\n", pfring_format_numbers(ticks_to_us(avg_delay,hz), buf1, sizeof(buf1), 1));
+} else {
+  printf("\nNo packets received => no stats\n");
+}
 
 pthread_join:
 
